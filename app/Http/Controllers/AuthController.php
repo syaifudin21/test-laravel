@@ -118,6 +118,7 @@ class AuthController extends Controller
      */
     public function logout()
     {
+        // fungsi sederhanda logout 
         auth()->logout();
 
         return response()->json(['message' => 'Successfully logged out']);
