@@ -21,6 +21,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
+        // mengaktifkan middleware dan juga menonaktifkan hanya pada fungsi login
         $this->middleware('auth.jwt', ['except' => ['login']]);
     }
     

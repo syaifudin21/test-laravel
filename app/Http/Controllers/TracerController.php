@@ -12,6 +12,7 @@ class TracerController extends Controller
 {
     public function __construct()
     {
+        // mengaktifkan middleware dan juga menonaktifkan hanya pada fungsi show
         $this->middleware('auth.jwt', ['except' => ['show']]);
     }
 
@@ -24,8 +25,10 @@ class TracerController extends Controller
         $end_date = date('Y-m-d');
 
         //penggunaan select tanpa join memberikan peforma yang lebih, 
-        $tracers = DB::select("select * from table_user_education where gpa > '$gpa_min' AND date_start >= '$date_start' AND date_end <= '$end_date' ORDER BY gpa DESC");
+        // $tracers = DB::select("select * from table_user_education where gpa > '$gpa_min' AND date_start >= '$date_start' AND date_end <= '$end_date' ORDER BY gpa DESC");
         
+        //saya hanya menebak-nebak saja kebutuhan short date , query dibawah ini menggunakan sub query dengan melibatkan table_user_tracer_study dengan colom publication start sebagai parameter yang tampil tampil
+        $tracers = DB::select("SELECT * FROM `table_user_education` WHERE gpa > '$gpa_min' AND school_id = (SELECT school_id FROM `table_user_tracer_study` WHERE table_user_tracer_study.publication_start >= '$date_start' AND date_end <= '$end_date' LIMIT 1)");
 
         // struktur yang terlalu kompleks akan dibuatkan pada satu file untuk merapikan code
         return UserEducationResource::collection($tracers);
@@ -46,7 +49,6 @@ class TracerController extends Controller
         $validator = Validator::make($request->all(), [
             //validasi jika tidak ada di table_school
             'school_id' => 'required|exists:table_school,id',
-
             'name'=> 'required', 
             'description'=> 'required',
             'target_start'=> 'required|date',
@@ -55,6 +57,7 @@ class TracerController extends Controller
             'publication_end'=> 'required|date',
         ]);
 
+        // fungsi mengembalikan nilai error dengan format json
         if($validator->fails()){
             return response()->json($validator->errors(), 400);
         }
@@ -65,11 +68,13 @@ class TracerController extends Controller
             (school_id, name, description, target_start,target_end, publication_start, publication_end) values 
             ('$request->school_id', '$request->name', '$request->description', '$request->target_start', '$request->target_end', '$request->publication_start', '$request->publication_end')");
 
+            // response jika tidak ada error pada query
             return response()->json([
                 'message' => 'Berhasil menambahkan data'
             ], 201);
 
         } catch (\Throwable $th) {
+            //respon jika terjadi kesalahan dalam query
             return response()->json([
                 'message' => 'Gagal melakukan panambahan data'
             ], 400);
@@ -99,6 +104,7 @@ class TracerController extends Controller
             'publication_end'=> 'required|date',
         ]);
 
+        // fungsi mengembalikan nilai error dengan format json
         if($validator->fails()){
             return response()->json($validator->errors(), 400);
         }
@@ -115,10 +121,12 @@ class TracerController extends Controller
             publication_end = '$request->publication_end'
             where id = '$id'");
 
+            // response jika tidak ada error pada query
             return response()->json([
                 'message' => 'Berhasil mengupdate tracer study'
             ], 201);
         } catch (\Throwable $th) {
+            //respon jika terjadi kesalahan dalam query
             return response()->json([
                 'message' => 'Gagal melakukan update'
             ], 400);
@@ -128,16 +136,20 @@ class TracerController extends Controller
     }
 
 
-    // mengupdate traccer study
+    // menghapus traccer study
     public function delete(Request $request, $id)
     {
         try {
+
+            // query penghapusan
             DB::select("delete table_user_tracer_study where id = '$id'");
 
+            // response jika tidak ada error pada query
             return response()->json([
                 'message' => 'Berhasil menghapus tracer study'
             ], 201);
         } catch (\Throwable $th) {
+            //respon jika terjadi kesalahan dalam query
             return response()->json([
                 'message' => 'Data yang mau dihapus tidak diketemukan'
             ], 400);
