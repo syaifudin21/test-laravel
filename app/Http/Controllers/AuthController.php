@@ -21,41 +21,86 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login']]);
+        $this->middleware('auth.jwt', ['except' => ['login']]);
     }
+    
 
     /**
      * Get a JWT via given credentials.
      *
      * @return \Illuminate\Http\JsonResponse
      */
+    // public function login(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'email' => 'required|string|email|max:255',
+    //         'nim' => 'required|integer',
+    //     ]);
+        
+    //     if($validator->fails()){
+    //         return response()->json($validator->errors(), 400);
+    //     }
+    //     $email = $request->email;
+        
+
+    //     $user = TableUser::where('email', $email)->first();
+    //     try { 
+    //         // verify the credentials and create a token for the user
+    //         if (! $token = JWTAuth::fromUser($user)) { 
+    //             return response()->json(['error' => 'invalid_credentials'], 401);
+    //         } 
+    //     } catch (JWTException $e) { 
+    //         // something went wrong 
+    //         return response()->json(['error' => 'could_not_create_token'], 500); 
+    //     } 
+    //     // if no errors are encountered we can return a JWT 
+    //     return response()->json(compact('token')); 
+    // }
+
     public function login(Request $request)
     {
+        //validasi jika email atau nim tidak diikut sertakan
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email|max:255',
             'nim' => 'required|integer',
         ]);
-        
+
         if($validator->fails()){
             return response()->json($validator->errors(), 400);
         }
-        $email = $request->email;
-        
 
-        $user = TableUser::where('email', $email)->first();
-        try { 
-            // verify the credentials and create a token for the user
-            if (! $token = JWTAuth::fromUser($user)) { 
-                return response()->json(['error' => 'invalid_credentials'], 401);
-            } 
-        } catch (JWTException $e) { 
-            // something went wrong 
-            return response()->json(['error' => 'could_not_create_token'], 500); 
-        } 
-        // if no errors are encountered we can return a JWT 
-        return response()->json(compact('token')); 
+        //karena tidak ada password dalam table, untuk login dengan kombinasi email dan nim
+        $user = TableUser::where(['email' => $request->email , 'nim'=> $request->nim])->first();
+
+        // validasi awal jika tidak ditemukan di database
+        if($user){
+            try {
+                //pembuatan token sekaligus validasi
+                if (!$token = JWTAuth::fromUser($user)) {
+                    return response()->json([
+                        'error' => 'Kombinasi Email dan Password yang anda masukkan tidak sesuai'
+                    ], 401);
+                }
+            } catch (JWTException $e) {
+                // response error jika system packege jwt bermasalah
+                return response()->json([
+                    'error' => 'Sistem token sedang bermasalah ["Gagal Create token"]'
+                ], 500);
+            }
+        }else{
+            // respon jika data tidak ditemukan di database
+            return response()->json([
+                'error' => 'Kombinasi Email dan Password yang anda masukkan tidak sesuai'
+            ], 401);
+        }
+
+        return $this->respondWithToken($token);
     }
 
+    public function getUser(){
+        $user = auth('api')->user();
+        return response()->json(['user'=>$user], 201);
+    }
     /**
      * Get the authenticated User.
      *

@@ -14,7 +14,7 @@ return [
     */
 
     'defaults' => [
-        'guard' => 'web',
+        'guard' => 'api',
         'passwords' => 'users',
     ],
 
@@ -40,10 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-
+        //diver login sebagai authentication menggunakan jwt
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'users',
+            'provider' => 'table_user',
         ],
     ],
 
@@ -68,6 +68,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'table_user' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\TableUser::class,
         ],
 
         // 'users' => [

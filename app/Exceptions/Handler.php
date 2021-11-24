@@ -4,6 +4,11 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Response;
+use Exception;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
 class Handler extends ExceptionHandler
 {
@@ -34,8 +39,21 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
-        $this->reportable(function (Throwable $e) {
-            //
+        // $this->reportable(function (Throwable $e) {
+        //     //
+        // });
+
+        //------ digunakan untuk validasi jika token pada jwt expired atau token yang dimaksudkan tidak match
+
+        $this->renderable(function(TokenInvalidException $e, $request){
+            return Response::json(['error'=>'Invalid token'],401);
+        });
+        $this->renderable(function (TokenExpiredException $e, $request) {
+            return Response::json(['error'=>'Token has Expired'],401);
+        });
+
+        $this->renderable(function (JWTException $e, $request) {
+            return Response::json(['error'=>'Token not parsed'],401);
         });
     }
 }
