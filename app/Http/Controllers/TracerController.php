@@ -21,14 +21,14 @@ class TracerController extends Controller
     {
         // fungsi jika api diakses tanpa parameter gpa_min;
         $gpa_min = $request->gpa_min ?? 0;
-        $date_start = date('Y-m-d', $request->date_start) ?? date('Y-m-d');
-        $end_date = date('Y-m-d');
+        $date = date('Y-m-d');
 
+        // dd($request->date_start, $end_date);
         //penggunaan select tanpa join memberikan peforma yang lebih, 
-        // $tracers = DB::select("select * from table_user_education where gpa > '$gpa_min' AND date_start >= '$date_start' AND date_end <= '$end_date' ORDER BY gpa DESC");
+        $tracers = DB::select("select * from table_user_education where gpa > '$gpa_min' AND date_start >= '$date' AND date_end <= '$date' ORDER BY gpa DESC");
         
         //saya hanya menebak-nebak saja kebutuhan short date , query dibawah ini menggunakan sub query dengan melibatkan table_user_tracer_study dengan colom publication start sebagai parameter yang tampil tampil
-        $tracers = DB::select("SELECT * FROM `table_user_education` WHERE gpa > '$gpa_min' AND school_id = (SELECT school_id FROM `table_user_tracer_study` WHERE table_user_tracer_study.publication_start >= '$date_start' AND date_end <= '$end_date' LIMIT 1)");
+        // $tracers = DB::select("SELECT * FROM `table_user_education` WHERE gpa > '$gpa_min' AND school_id = (SELECT school_id FROM `table_user_tracer_study` WHERE table_user_tracer_study.publication_start >= '$date' AND date_end <= '$date' LIMIT 1)");
 
         // struktur yang terlalu kompleks akan dibuatkan pada satu file untuk merapikan code
         return UserEducationResource::collection($tracers);
@@ -132,7 +132,6 @@ class TracerController extends Controller
             ], 400);
         }
         
-
     }
 
 
@@ -142,7 +141,7 @@ class TracerController extends Controller
         try {
 
             // query penghapusan
-            DB::select("delete table_user_tracer_study where id = '$id'");
+            DB::select("DELETE FROM `table_user_tracer_study` WHERE id = '$id'");
 
             // response jika tidak ada error pada query
             return response()->json([
