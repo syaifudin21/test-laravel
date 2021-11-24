@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserEducationResource;
 use Illuminate\Http\Request;
 use DB;
 use Illuminate\Support\Facades\Validator;
@@ -9,15 +10,39 @@ use Illuminate\Support\Facades\Validator;
 
 class TracerController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth.jwt', ['except' => ['show']]);
+    }
+
+    //jawaban pertanyaan nomor 1
+    public function number1(Request $request)
+    {
+        // fungsi jika api diakses tanpa parameter gpa_min;
+        $gpa_min = $request->gpa_min ?? 0;
+        $date_start = date('Y-m-d', $request->date_start) ?? date('Y-m-d');
+        $end_date = date('Y-m-d');
+
+        //penggunaan select tanpa join memberikan peforma yang lebih, 
+        $tracers = DB::select("select * from table_user_education where gpa > '$gpa_min' AND date_start >= '$date_start' AND date_end <= '$end_date' ORDER BY gpa DESC");
+        
+
+        // struktur yang terlalu kompleks akan dibuatkan pada satu file untuk merapikan code
+        return UserEducationResource::collection($tracers);
+    }
+
     //menampilkan perulangan yang ada di table 
     public function index(Request $request)
     {
+        //karena TIDAK ADA dipersoalan saya menggunakan query builder untuk mempermudah paginate, 
         $tracerStudys = DB::table('table_user_tracer_study')->simplePaginate();
         return response()->json($tracerStudys, 200);
     }
+
     //menyimpan data tracer study
     public function store(Request $request)
     {
+        // validasi sederhana paramter yang wajib di includkan ketika api diakses
         $validator = Validator::make($request->all(), [
             //validasi jika tidak ada di table_school
             'school_id' => 'required|exists:table_school,id',
@@ -34,24 +59,19 @@ class TracerController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
-        // query builder menyimpan data tracer
-        $tracerStudy = DB::table('table_user_tracer_study')->insert([
-            'school_id' => $request->school_id, 
-            'name'=> $request->name, 
-            'description'=> $request->description,
-            'target_start'=> $request->target_start,
-            'target_end'=> $request->target_end,
-            'publication_start'=> $request->publication_start,
-            'publication_end' => $request->publication_end
-        ]);
+        // melakukan uji query apakah tidak ada kesalahan sql penulisan
+        try {
+            DB::select("INSERT INTO table_user_tracer_study  
+            (school_id, name, description, target_start,target_end, publication_start, publication_end) values 
+            ('$request->school_id', '$request->name', '$request->description', '$request->target_start', '$request->target_end', '$request->publication_start', '$request->publication_end')");
 
-        if($tracerStudy){
             return response()->json([
-                'message' => 'Berhasil menyimpan tracer study'
+                'message' => 'Berhasil menambahkan data'
             ], 201);
-        }else{
+
+        } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'Terjadi kesalahan penulisan pada database'
+                'message' => 'Gagal melakukan panambahan data'
             ], 400);
         }
 
@@ -60,7 +80,7 @@ class TracerController extends Controller
     //menampilkan study tracer ada di table 
     public function show($id)
     {
-        $tracerStudys = DB::table('table_user_tracer_study')->where('id',$id)->first();
+        $tracerStudys = DB::select("select * from table_user_tracer_study where id = '$id'")[0];
         return response()->json($tracerStudys, 200);
     }
 
@@ -83,40 +103,41 @@ class TracerController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
-        // query builder menyimpan data tracer
-        $tracerStudy = DB::table('table_user_tracer_study')->where('id',$id)->update([
-            'school_id' => $request->school_id, 
-            'name'=> $request->name, 
-            'description'=> $request->description,
-            'target_start'=> $request->target_start,
-            'target_end'=> $request->target_end,
-            'publication_start'=> $request->publication_start,
-            'publication_end' => $request->publication_end
-        ]);
+        // melakukan uji query apakah tidak ada kesalahan sql penulisan
+        try {
+            DB::select("update table_user_tracer_study set
+            school_id = '$request->school_id',
+            name= '$request->name', 
+            description= '$request->description',
+            target_start= '$request->target_start',
+            target_end= '$request->target_end',
+            publication_start= '$request->publication_start',
+            publication_end = '$request->publication_end'
+            where id = '$id'");
 
-        if($tracerStudy){
             return response()->json([
                 'message' => 'Berhasil mengupdate tracer study'
             ], 201);
-        }else{
+        } catch (\Throwable $th) {
             return response()->json([
-                'message' => 'Tidak ada perubahan dalam database, dikarenakan data yang dimasukkan sama persis'
+                'message' => 'Gagal melakukan update'
             ], 400);
         }
+        
+
     }
 
 
     // mengupdate traccer study
     public function delete(Request $request, $id)
     {
-        // query builder menyimpan data tracer
-        $tracerStudy = DB::table('table_user_tracer_study')->where('id',$id)->delete();
+        try {
+            DB::select("delete table_user_tracer_study where id = '$id'");
 
-        if($tracerStudy){
             return response()->json([
                 'message' => 'Berhasil menghapus tracer study'
             ], 201);
-        }else{
+        } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'Data yang mau dihapus tidak diketemukan'
             ], 400);

@@ -14,6 +14,9 @@ Route::group(['prefix' => 'user'], function ($router) {
 
 });
 
+Route::get('tracer_study', 'TracerController@number1');
+
+//soal nomor 234
 Route::group(['prefix' => 'tracer'], function ($router) {
     Route::get('', 'TracerController@index');
     Route::post('', 'TracerController@store');

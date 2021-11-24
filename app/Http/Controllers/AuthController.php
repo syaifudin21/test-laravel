@@ -24,39 +24,6 @@ class AuthController extends Controller
         $this->middleware('auth.jwt', ['except' => ['login']]);
     }
     
-
-    /**
-     * Get a JWT via given credentials.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    // public function login(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'email' => 'required|string|email|max:255',
-    //         'nim' => 'required|integer',
-    //     ]);
-        
-    //     if($validator->fails()){
-    //         return response()->json($validator->errors(), 400);
-    //     }
-    //     $email = $request->email;
-        
-
-    //     $user = TableUser::where('email', $email)->first();
-    //     try { 
-    //         // verify the credentials and create a token for the user
-    //         if (! $token = JWTAuth::fromUser($user)) { 
-    //             return response()->json(['error' => 'invalid_credentials'], 401);
-    //         } 
-    //     } catch (JWTException $e) { 
-    //         // something went wrong 
-    //         return response()->json(['error' => 'could_not_create_token'], 500); 
-    //     } 
-    //     // if no errors are encountered we can return a JWT 
-    //     return response()->json(compact('token')); 
-    // }
-
     public function login(Request $request)
     {
         //validasi jika email atau nim tidak diikut sertakan
